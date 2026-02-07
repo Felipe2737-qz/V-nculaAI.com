@@ -1,0 +1,243 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Sparkles, User, Globe, DollarSign, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+
+const languages = [
+  { value: 'en', label: 'English' },
+  { value: 'pt', label: 'Português' },
+  { value: 'es', label: 'Español' },
+  { value: 'fr', label: 'Français' },
+  { value: 'de', label: 'Deutsch' },
+];
+
+const currencies = [
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'BRL', label: 'BRL (R$)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'GBP', label: 'GBP (£)' },
+];
+
+export default function AccountSettings() {
+  const { t, language, setLanguage, currency, setCurrency } = useApp();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+    }
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    // In a real app, this would call the API
+    await new Promise(resolve => setTimeout(resolve, 500));
+    toast.success('Profile updated (demo mode)');
+    setIsSaving(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    // In a real app, this would call the API
+    toast.success('Account deleted (demo mode)');
+    await logout();
+    navigate('/');
+  };
+
+  return (
+    <PageLayout showFooter={false}>
+      <div className="min-h-[calc(100vh-4rem)] py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            {/* Back Button */}
+            <Button variant="ghost" asChild className="mb-6">
+              <Link to="/chat">
+                <ArrowLeft className="w-4 h-4" />
+                {t.common.back}
+              </Link>
+            </Button>
+
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold">{t.settings.title}</h1>
+            </div>
+
+            {/* Vínculos Card */}
+            <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl gradient-vincula flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">{t.settings.vinculos}</div>
+                    <div className="text-3xl font-bold">{user?.vinculos || 0}</div>
+                  </div>
+                </div>
+                <Button variant="hero" asChild>
+                  <Link to="/pricing">Buy More</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Account Section */}
+            <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                {t.settings.account}
+              </h2>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Email cannot be changed
+                  </p>
+                </div>
+
+                <Button
+                  variant="default"
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                >
+                  {isSaving ? t.common.loading : t.settings.updateProfile}
+                </Button>
+              </div>
+            </div>
+
+            {/* Preferences Section */}
+            <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" />
+                Preferences
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>{t.settings.language}</Label>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as typeof language)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t.settings.currency}</Label>
+                  <Select value={currency} onValueChange={(v) => setCurrency(v as typeof currency)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencies.map((curr) => (
+                        <SelectItem key={curr.value} value={curr.value}>
+                          {curr.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Language does not change currency
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="rounded-2xl bg-destructive/5 border border-destructive/20 p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-destructive">
+                <Trash2 className="w-5 h-5" />
+                {t.settings.dangerZone}
+              </h2>
+
+              <p className="text-muted-foreground mb-4">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    {t.settings.deleteAccount}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your
+                      account and remove your data from our servers.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount}>
+                      {t.settings.deleteAccount}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
