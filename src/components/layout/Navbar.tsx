@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, User, LogOut, Settings, Sparkles } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,11 +37,8 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg gradient-vincula flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold gradient-vincula-text">Víncula</span>
+          <Link to="/">
+            <VinculaLogo size="sm" showText />
           </Link>
 
           {/* Desktop Nav */}
@@ -66,8 +64,7 @@ export function Navbar() {
               <>
                 {/* Vínculos Badge */}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{user?.vinculos || 0}</span>
+                  <span className="text-sm font-medium">{user?.vinculos || 0} {t.chat.vinculos}</span>
                 </div>
 
                 {/* Chat Button */}
@@ -143,8 +140,7 @@ export function Navbar() {
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">{user?.vinculos || 0} Vínculos</span>
+                    <span className="text-sm font-medium">{user?.vinculos || 0} {t.chat.vinculos}</span>
                   </div>
                   <Button variant="hero" className="w-full" asChild>
                     <Link to="/chat" onClick={() => setIsOpen(false)}>

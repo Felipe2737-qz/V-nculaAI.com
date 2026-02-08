@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, Sparkles } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plan, CURRENCY_SYMBOLS } from '@/types/api';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
+import { api, isApiConfigured } from '@/lib/api';
 
 // Default plans (used when API is unavailable)
 const DEFAULT_PLANS: Plan[] = [
@@ -36,8 +38,6 @@ const DEFAULT_PLANS: Plan[] = [
   },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-
 export default function Pricing() {
   const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,13 +47,15 @@ export default function Pricing() {
 
   useEffect(() => {
     const fetchPlans = async () => {
+      if (!isApiConfigured()) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const res = await fetch(`${API_URL}/api/payments/plans?currency=${currency}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data?.plans) {
-            setPlans(data.data.plans);
-          }
+        const response = await api.get<{ plans: Plan[] }>(`/api/payments/plans?currency=${currency}`);
+        if (response.success && response.data?.plans) {
+          setPlans(response.data.plans);
         }
       } catch (error) {
         console.error('Failed to fetch plans, using defaults');
@@ -85,8 +87,8 @@ export default function Pricing() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/50 mb-6">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">Simple Pricing</span>
+              <VinculaLogo size="sm" />
+              <span className="text-sm font-medium">{t.pricing.badge}</span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="gradient-vincula-text">{t.pricing.title}</span>
@@ -127,7 +129,7 @@ export default function Pricing() {
                 </div>
 
                 <div className="flex items-center gap-2 mb-6 p-3 rounded-lg bg-secondary/50">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                  <VinculaLogo size="sm" />
                   <span className="font-semibold">{plan.vinculos}</span>
                   <span className="text-muted-foreground">{t.pricing.vinculos}</span>
                 </div>
@@ -143,15 +145,15 @@ export default function Pricing() {
                 <ul className="mt-6 space-y-3">
                   <li className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Check className="w-4 h-4 text-success" />
-                    1 Vínculo = 1 AI response
+                    {t.pricing.feature1}
                   </li>
                   <li className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Check className="w-4 h-4 text-success" />
-                    No expiration
+                    {t.pricing.feature2}
                   </li>
                   <li className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Check className="w-4 h-4 text-success" />
-                    Full conversation history
+                    {t.pricing.feature3}
                   </li>
                 </ul>
               </div>
@@ -164,34 +166,34 @@ export default function Pricing() {
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold text-center mb-12">{t.pricing.faqTitle}</h2>
 
             <div className="space-y-6">
               <div className="p-6 rounded-xl bg-card border border-border/50">
-                <h3 className="font-semibold mb-2">What is a Vínculo?</h3>
+                <h3 className="font-semibold mb-2">{t.pricing.faq1Title}</h3>
                 <p className="text-muted-foreground">
-                  A Vínculo is our credit unit. Each AI response costs 1 Vínculo. Purchase the pack that fits your needs.
+                  {t.pricing.faq1Text}
                 </p>
               </div>
 
               <div className="p-6 rounded-xl bg-card border border-border/50">
-                <h3 className="font-semibold mb-2">Do Vínculos expire?</h3>
+                <h3 className="font-semibold mb-2">{t.pricing.faq2Title}</h3>
                 <p className="text-muted-foreground">
-                  No, your Vínculos never expire. Use them whenever you need guidance.
+                  {t.pricing.faq2Text}
                 </p>
               </div>
 
               <div className="p-6 rounded-xl bg-card border border-border/50">
-                <h3 className="font-semibold mb-2">What payment methods do you accept?</h3>
+                <h3 className="font-semibold mb-2">{t.pricing.faq3Title}</h3>
                 <p className="text-muted-foreground">
-                  We accept PIX (for Brazil), PayPal, and Wise for international payments.
+                  {t.pricing.faq3Text}
                 </p>
               </div>
 
               <div className="p-6 rounded-xl bg-card border border-border/50">
-                <h3 className="font-semibold mb-2">Can I get a refund?</h3>
+                <h3 className="font-semibold mb-2">{t.pricing.faq4Title}</h3>
                 <p className="text-muted-foreground">
-                  If you're not satisfied, contact us within 7 days of purchase for a full refund.
+                  {t.pricing.faq4Text}
                 </p>
               </div>
             </div>

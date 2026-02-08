@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, User, Globe, DollarSign, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Globe, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,7 @@ import {
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
 import { toast } from 'sonner';
 
 const languages = [
@@ -66,14 +67,12 @@ export default function AccountSettings() {
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
-    // In a real app, this would call the API
     await new Promise(resolve => setTimeout(resolve, 500));
     toast.success('Profile updated (demo mode)');
     setIsSaving(false);
   };
 
   const handleDeleteAccount = async () => {
-    // In a real app, this would call the API
     toast.success('Account deleted (demo mode)');
     await logout();
     navigate('/');
@@ -101,16 +100,14 @@ export default function AccountSettings() {
             <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl gradient-vincula flex items-center justify-center">
-                    <Sparkles className="w-7 h-7 text-primary-foreground" />
-                  </div>
+                  <VinculaLogo size="lg" />
                   <div>
                     <div className="text-sm text-muted-foreground">{t.settings.vinculos}</div>
                     <div className="text-3xl font-bold">{user?.vinculos || 0}</div>
                   </div>
                 </div>
                 <Button variant="hero" asChild>
-                  <Link to="/pricing">Buy More</Link>
+                  <Link to="/pricing">{t.settings.buyMore}</Link>
                 </Button>
               </div>
             </div>
@@ -124,7 +121,7 @@ export default function AccountSettings() {
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t.auth.name}</Label>
                   <Input
                     id="name"
                     value={name}
@@ -133,7 +130,7 @@ export default function AccountSettings() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t.auth.email}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -142,7 +139,7 @@ export default function AccountSettings() {
                     disabled
                   />
                   <p className="text-xs text-muted-foreground">
-                    Email cannot be changed
+                    {t.settings.emailNoChange}
                   </p>
                 </div>
 
@@ -160,7 +157,7 @@ export default function AccountSettings() {
             <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <Globe className="w-5 h-5 text-primary" />
-                Preferences
+                {t.settings.preferences}
               </h2>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -195,7 +192,7 @@ export default function AccountSettings() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Language does not change currency
+                    {t.settings.langNoCurrency}
                   </p>
                 </div>
               </div>
@@ -209,7 +206,7 @@ export default function AccountSettings() {
               </h2>
 
               <p className="text-muted-foreground mb-4">
-                Once you delete your account, there is no going back. Please be certain.
+                {t.settings.deleteWarning}
               </p>
 
               <AlertDialog>
@@ -220,10 +217,9 @@ export default function AccountSettings() {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>{t.settings.deleteConfirmTitle}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete your
-                      account and remove your data from our servers.
+                      {t.settings.deleteConfirmDesc}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

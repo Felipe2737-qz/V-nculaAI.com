@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, MessageCircle, Shield, Zap, Sparkles, Heart } from 'lucide-react';
+import { ArrowRight, MessageCircle, Shield, Zap, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
 
 export default function Index() {
   const { t } = useApp();
@@ -12,36 +13,18 @@ export default function Index() {
   const features = [
     {
       icon: MessageCircle,
-      title: 'Personalized Guidance',
-      description: 'Get tailored advice for your unique relationship situation.',
+      title: t.features.personalizedTitle,
+      description: t.features.personalizedDesc,
     },
     {
       icon: Shield,
-      title: 'Private & Secure',
-      description: 'Your conversations are encrypted and never shared.',
+      title: t.features.privateTitle,
+      description: t.features.privateDesc,
     },
     {
       icon: Zap,
-      title: 'Instant Response',
-      description: 'Get help when you need it, 24/7 availability.',
-    },
-  ];
-
-  const testimonials = [
-    {
-      name: 'Sarah M.',
-      text: 'Víncula helped me communicate better with my partner. The advice is practical and actionable.',
-      avatar: '👩',
-    },
-    {
-      name: 'Carlos R.',
-      text: 'I was skeptical at first, but the AI really understands relationship dynamics.',
-      avatar: '👨',
-    },
-    {
-      name: 'Emma L.',
-      text: 'Finally, relationship advice that\'s available whenever I need it.',
-      avatar: '👩‍🦰',
+      title: t.features.instantTitle,
+      description: t.features.instantDesc,
     },
   ];
 
@@ -58,8 +41,8 @@ export default function Index() {
           <div className="max-w-3xl mx-auto text-center">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/50 mb-8 animate-fade-in">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium">AI-Powered Psychology</span>
+              <VinculaLogo size="sm" />
+              <span className="text-sm font-medium">{t.hero.badge}</span>
             </div>
 
             {/* Title */}
@@ -89,15 +72,15 @@ export default function Index() {
             <div className="mt-16 grid grid-cols-3 gap-8 animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <div className="text-center">
                 <div className="text-3xl font-bold gradient-vincula-text">10K+</div>
-                <div className="text-sm text-muted-foreground">Users</div>
+                <div className="text-sm text-muted-foreground">{t.hero.users}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold gradient-vincula-text">50K+</div>
-                <div className="text-sm text-muted-foreground">Conversations</div>
+                <div className="text-sm text-muted-foreground">{t.hero.conversations}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold gradient-vincula-text">4.9</div>
-                <div className="text-sm text-muted-foreground">Rating</div>
+                <div className="text-sm text-muted-foreground">{t.hero.rating}</div>
               </div>
             </div>
           </div>
@@ -108,9 +91,9 @@ export default function Index() {
       <section className="py-24 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Víncula AI?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t.features.title}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Our AI is trained on relationship psychology principles to give you practical, actionable advice.
+              {t.features.subtitle}
             </p>
           </div>
 
@@ -137,11 +120,8 @@ export default function Index() {
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1">
               <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Relationship advice that <span className="gradient-vincula-text">actually works</span>
+                {t.howSection.title} <span className="gradient-vincula-text">{t.howSection.subtitle}</span>
               </h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Our AI analyzes your situation and provides structured guidance in three parts: Assessment, Explanation, and Resolution.
-              </p>
 
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -149,8 +129,8 @@ export default function Index() {
                     <span className="text-primary font-bold">1</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Assessment</h4>
-                    <p className="text-sm text-muted-foreground">We identify what's happening in your situation</p>
+                    <h4 className="font-semibold mb-1">{t.howSection.assessment}</h4>
+                    <p className="text-sm text-muted-foreground">{t.howSection.assessmentDesc}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -158,8 +138,8 @@ export default function Index() {
                     <span className="text-primary font-bold">2</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Explanation</h4>
-                    <p className="text-sm text-muted-foreground">Understand why it's happening from a psychology perspective</p>
+                    <h4 className="font-semibold mb-1">{t.howSection.explanation}</h4>
+                    <p className="text-sm text-muted-foreground">{t.howSection.explanationDesc}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -167,15 +147,15 @@ export default function Index() {
                     <span className="text-primary font-bold">3</span>
                   </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Resolution</h4>
-                    <p className="text-sm text-muted-foreground">Actionable steps you can take today</p>
+                    <h4 className="font-semibold mb-1">{t.howSection.resolution}</h4>
+                    <p className="text-sm text-muted-foreground">{t.howSection.resolutionDesc}</p>
                   </div>
                 </div>
               </div>
 
               <Button variant="hero" className="mt-8" asChild>
                 <Link to="/how-it-works">
-                  Learn More
+                  {t.howSection.cta}
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </Button>
@@ -185,9 +165,7 @@ export default function Index() {
             <div className="flex-1 w-full max-w-lg">
               <div className="rounded-2xl bg-card border border-border/50 p-6 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full gradient-vincula flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-primary-foreground" />
-                  </div>
+                  <VinculaLogo size="md" />
                   <div>
                     <div className="font-semibold">Víncula AI</div>
                     <div className="text-xs text-muted-foreground">Online</div>
@@ -212,59 +190,26 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="p-8 rounded-2xl bg-card border border-border/50"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-2xl">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="flex text-primary">
-                      {'★★★★★'.split('').map((star, i) => (
-                        <span key={i}>{star}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-muted-foreground">{testimonial.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="py-24">
+      <section className="py-24 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/50 mb-8">
               <Heart className="w-4 h-4 text-destructive" />
-              <span className="text-sm font-medium">Start your journey today</span>
+              <span className="text-sm font-medium">{t.cta.badge}</span>
             </div>
 
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Ready to transform your relationships?
+              {t.cta.title}
             </h2>
 
             <p className="text-lg text-muted-foreground mb-10">
-              Join thousands of users who have improved their communication and relationships with Víncula AI.
+              {t.cta.subtitle}
             </p>
 
             <Button variant="hero" size="xl" asChild>
               <Link to={isAuthenticated ? '/chat' : '/signup'}>
-                Get Started Free
+                {t.cta.button}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>

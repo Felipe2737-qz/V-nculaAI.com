@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, CheckCircle, Loader2, Sparkles, QrCode } from 'lucide-react';
+import { ArrowLeft, Copy, Check, CheckCircle, Loader2, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plan, CURRENCY_SYMBOLS } from '@/types/api';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
+import { api, isApiConfigured } from '@/lib/api';
 import { toast } from 'sonner';
 
 const DEFAULT_PLANS: Plan[] = [
@@ -15,7 +17,6 @@ const DEFAULT_PLANS: Plan[] = [
   { id: 'premium', name: 'Premium', vinculos: 1000, prices: { USD: 15, BRL: 75, EUR: 14.99, GBP: 13.99 } },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const PIX_KEY = import.meta.env.VITE_PIX_KEY || 'your-pix-key@email.com';
 
 type PaymentMethod = 'pix' | 'paypal' | 'wise';
@@ -47,26 +48,24 @@ export default function Payment() {
   const createPayment = async () => {
     setIsCreating(true);
     try {
-      const res = await fetch(`${API_URL}/api/payments/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      if (isApiConfigured()) {
+        const response = await api.post<{ paymentId: string }>('/api/payments/create', {
           planId: plan.id,
           method: selectedMethod,
           currency,
           idempotencyKey: `${user?.id}-${plan.id}-${Date.now()}`,
-        }),
-      });
+        });
 
-      const data = await res.json();
-      if (data.success && data.data?.paymentId) {
-        setPaymentId(data.data.paymentId);
+        if (response.success && response.data?.paymentId) {
+          setPaymentId(response.data.paymentId);
+        } else {
+          toast.error(response.message || 'Failed to create payment');
+        }
       } else {
-        toast.error(data.message || 'Failed to create payment');
+        // Demo mode
+        setPaymentId(`mock-${Date.now()}`);
       }
     } catch (error) {
-      // For demo, create a mock payment ID
       setPaymentId(`mock-${Date.now()}`);
     } finally {
       setIsCreating(false);
@@ -78,24 +77,24 @@ export default function Payment() {
     
     setIsConfirming(true);
     try {
-      const res = await fetch(`${API_URL}/api/payments/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ paymentId }),
-      });
+      if (isApiConfigured()) {
+        const response = await api.post('/api/payments/confirm', { paymentId });
 
-      const data = await res.json();
-      if (data.success) {
-        setIsConfirmed(true);
-        await refreshUser();
-        toast.success(`${plan.vinculos} Vínculos added to your account!`);
-        setTimeout(() => navigate('/chat'), 2000);
+        if (response.success) {
+          setIsConfirmed(true);
+          await refreshUser();
+          toast.success(`${plan.vinculos} Vínculos added!`);
+          setTimeout(() => navigate('/chat'), 2000);
+        } else {
+          toast.error(response.message || 'Failed to confirm payment');
+        }
       } else {
-        toast.error(data.message || 'Failed to confirm payment');
+        // Demo mode
+        setIsConfirmed(true);
+        toast.success(`${plan.vinculos} Vínculos added! (Demo mode)`);
+        setTimeout(() => navigate('/chat'), 2000);
       }
     } catch (error) {
-      // For demo, simulate success
       setIsConfirmed(true);
       toast.success(`${plan.vinculos} Vínculos added! (Demo mode)`);
       setTimeout(() => navigate('/chat'), 2000);
@@ -121,9 +120,9 @@ export default function Payment() {
             </div>
             <h1 className="text-3xl font-bold mb-4">{t.payment.paymentSuccess}</h1>
             <p className="text-lg text-muted-foreground mb-2">
-              +{plan.vinculos} Vínculos added to your account
+              +{plan.vinculos} Vínculos
             </p>
-            <p className="text-muted-foreground">Redirecting to chat...</p>
+            <p className="text-muted-foreground">{t.payment.redirecting}</p>
           </div>
         </div>
       </PageLayout>
@@ -155,9 +154,7 @@ export default function Payment() {
             <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl gradient-vincula flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-primary-foreground" />
-                  </div>
+                  <VinculaLogo size="lg" />
                   <div>
                     <div className="font-semibold">{plan.name}</div>
                     <div className="text-sm text-muted-foreground">{plan.vinculos} Vínculos</div>
@@ -206,7 +203,7 @@ export default function Payment() {
                       {t.common.loading}
                     </>
                   ) : (
-                    `Continue with ${selectedMethod.toUpperCase()}`
+                    `${t.payment.continueWith} ${selectedMethod.toUpperCase()}`
                   )}
                 </Button>
               </>
@@ -218,13 +215,13 @@ export default function Payment() {
                 <div className="rounded-2xl bg-card border border-border/50 p-6">
                   <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <QrCode className="w-5 h-5 text-primary" />
-                    Payment Instructions
+                    {t.payment.instructions}
                   </h3>
 
                   {selectedMethod === 'pix' && (
                     <div className="space-y-4">
                       <p className="text-muted-foreground">
-                        Send exactly <strong>{symbol}{price.toFixed(2)}</strong> to the PIX key below:
+                        {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong>:
                       </p>
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary">
                         <code className="flex-1 text-sm break-all">{PIX_KEY}</code>
@@ -243,7 +240,7 @@ export default function Payment() {
                       <div className="p-8 rounded-lg bg-secondary/50 flex items-center justify-center">
                         <div className="text-center text-muted-foreground">
                           <QrCode className="w-16 h-16 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">QR Code would be generated here</p>
+                          <p className="text-sm">{t.payment.qrPlaceholder}</p>
                         </div>
                       </div>
                     </div>
@@ -252,7 +249,7 @@ export default function Payment() {
                   {selectedMethod === 'paypal' && (
                     <div className="space-y-4">
                       <p className="text-muted-foreground">
-                        Send exactly <strong>{symbol}{price.toFixed(2)}</strong> via PayPal to complete your purchase.
+                        {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong> via PayPal.
                       </p>
                       <Button variant="outline" className="w-full" asChild>
                         <a href="https://paypal.me" target="_blank" rel="noopener noreferrer">
@@ -265,7 +262,7 @@ export default function Payment() {
                   {selectedMethod === 'wise' && (
                     <div className="space-y-4">
                       <p className="text-muted-foreground">
-                        Send exactly <strong>{symbol}{price.toFixed(2)}</strong> via Wise to complete your purchase.
+                        {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong> via Wise.
                       </p>
                       <Button variant="outline" className="w-full" asChild>
                         <a href="https://wise.com" target="_blank" rel="noopener noreferrer">
@@ -296,7 +293,7 @@ export default function Payment() {
                 </Button>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  Click above only after completing the payment
+                  {t.payment.clickAfter}
                 </p>
               </div>
             )}

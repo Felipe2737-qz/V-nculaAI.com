@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -25,12 +26,12 @@ export default function Signup() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t.auth.passwordsNoMatch);
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t.auth.passwordTooShort);
       return;
     }
 
@@ -51,11 +52,8 @@ export default function Signup() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-vincula flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold gradient-vincula-text">Víncula</span>
+            <Link to="/" className="inline-block">
+              <VinculaLogo size="lg" showText />
             </Link>
           </div>
 
@@ -63,7 +61,7 @@ export default function Signup() {
           <div className="rounded-2xl bg-card border border-border/50 p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-center mb-2">{t.auth.signup}</h1>
             <p className="text-muted-foreground text-center mb-8">
-              Create your account to get started.
+              {t.auth.createAccount}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
