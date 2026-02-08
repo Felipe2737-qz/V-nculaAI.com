@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   vinculos: number;
+  provider?: 'email' | 'google' | 'apple';
   preferences: {
     language: 'en' | 'pt' | 'es' | 'fr' | 'de';
     currency: 'USD' | 'BRL' | 'EUR' | 'GBP';

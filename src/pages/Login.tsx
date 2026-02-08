@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { VinculaLogo } from '@/components/shared/VinculaLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -36,11 +37,8 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl gradient-vincula flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold gradient-vincula-text">Víncula</span>
+            <Link to="/" className="inline-block">
+              <VinculaLogo size="lg" showText />
             </Link>
           </div>
 
@@ -48,7 +46,7 @@ export default function Login() {
           <div className="rounded-2xl bg-card border border-border/50 p-8 shadow-xl">
             <h1 className="text-2xl font-bold text-center mb-2">{t.auth.login}</h1>
             <p className="text-muted-foreground text-center mb-8">
-              Welcome back! Enter your credentials.
+              {t.auth.welcomeBack}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
