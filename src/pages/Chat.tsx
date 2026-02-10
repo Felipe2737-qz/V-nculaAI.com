@@ -7,6 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { VinculaLogo } from '@/components/shared/VinculaLogo';
 import { api, isApiConfigured } from '@/lib/api';
+import { sendToGemini } from '@/lib/gemini';
 import { toast } from 'sonner';
 
 interface Message {
@@ -153,28 +154,22 @@ export default function Chat() {
           throw new Error(response.message || 'Failed to get response');
         }
       } else {
-        // Demo mode fallback
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        const demoResponse: Message = {
+        // Use Gemini AI directly
+        const history = messages.map(m => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }));
+
+        const aiResponse = await sendToGemini(userMessage.content, history);
+
+        const assistantMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: `**1) Assessment:**
-Your question shows you're looking for clarity in your situation. This is a positive first step.
-
-**2) Explanation:**
-Understanding relationship dynamics requires looking at communication patterns, expectations, and how both parties express their needs.
-
-**3) Resolution:**
-1. Identify the specific pattern you want to change
-2. Practice expressing your needs clearly using "I" statements
-3. Listen actively to understand, not just to respond
-
-*Note: This is demo mode. Connect the backend for full functionality.*`,
+          content: aiResponse,
           timestamp: new Date(),
         };
 
-        setMessages(prev => [...prev, demoResponse]);
+        setMessages(prev => [...prev, assistantMessage]);
         
         if (!usedFreeMessage && user) {
           updateVinculos(Math.max(0, (user.vinculos || 1) - 1));
