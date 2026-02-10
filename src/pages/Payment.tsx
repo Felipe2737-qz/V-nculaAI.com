@@ -9,6 +9,7 @@ import { Plan, CURRENCY_SYMBOLS } from '@/types/api';
 import { VinculaLogo } from '@/components/shared/VinculaLogo';
 import { api, isApiConfigured } from '@/lib/api';
 import { toast } from 'sonner';
+import paypalQr from '@/assets/paypal-qr.jpeg';
 
 const DEFAULT_PLANS: Plan[] = [
   { id: 'starter', name: 'Starter', vinculos: 50, prices: { USD: 1, BRL: 5, EUR: 0.99, GBP: 0.90 } },
@@ -17,9 +18,20 @@ const DEFAULT_PLANS: Plan[] = [
   { id: 'premium', name: 'Premium', vinculos: 1000, prices: { USD: 15, BRL: 75, EUR: 14.99, GBP: 13.99 } },
 ];
 
-const PIX_KEY = import.meta.env.VITE_PIX_KEY || 'your-pix-key@email.com';
+const PIX_KEY = '85982309370';
 
-type PaymentMethod = 'pix' | 'paypal' | 'wise';
+type PaymentMethod = 'pix' | 'paypal';
+
+// PIX logo SVG component
+function PixLogo({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M382.56 349.37c-24.1 0-46.8-9.4-63.9-26.5l-74.6-74.6c-5-4.9-13.7-4.9-18.6 0l-75 75c-17.1 17.1-39.8 26.5-63.9 26.5h-16.1l94.8 94.8c35.2 35.2 92.3 35.2 127.5 0l94.9-94.9h-5.1z" fill="#32BCAD"/>
+      <path d="M86.56 162.63c24.1 0 46.8 9.4 63.9 26.5l75 75c5.1 5.1 13.5 5.1 18.6 0l74.6-74.6c17.1-17.1 39.8-26.5 63.9-26.5h5.1l-94.9-94.9c-35.2-35.2-92.3-35.2-127.5 0l-94.8 94.8h16.1z" fill="#32BCAD"/>
+      <path d="M444.76 193.87l-50.3-50.3c-2.6 1.5-5.4 2.5-8.3 2.5h-3.6c-17.8 0-34.5 6.9-47.1 19.5l-74.6 74.6c-8.8 8.8-20.3 13.2-31.9 13.2s-23.1-4.4-31.9-13.2l-75-75c-12.5-12.5-29.3-19.5-47.1-19.5h-7.5c-2.9 0-5.7-1-8.3-2.5l-50.4 50.4c-35.2 35.2-35.2 92.3 0 127.5l50.4 50.4c2.6-1.5 5.4-2.5 8.3-2.5h7.5c17.8 0 34.5-6.9 47.1-19.5l75-75c17-17 46.7-17 63.7 0l74.6 74.6c12.5 12.5 29.3 19.5 47.1 19.5h3.6c2.9 0 5.7 1 8.3 2.5l50.3-50.3c35.2-35.1 35.2-92.2 0-127.4z" fill="#32BCAD"/>
+    </svg>
+  );
+}
 
 export default function Payment() {
   const [searchParams] = useSearchParams();
@@ -30,7 +42,7 @@ export default function Payment() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
   const { t, currency } = useApp();
   const { user, isAuthenticated, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -55,17 +67,15 @@ export default function Payment() {
           currency,
           idempotencyKey: `${user?.id}-${plan.id}-${Date.now()}`,
         });
-
         if (response.success && response.data?.paymentId) {
           setPaymentId(response.data.paymentId);
         } else {
           toast.error(response.message || 'Failed to create payment');
         }
       } else {
-        // Demo mode
         setPaymentId(`mock-${Date.now()}`);
       }
-    } catch (error) {
+    } catch {
       setPaymentId(`mock-${Date.now()}`);
     } finally {
       setIsCreating(false);
@@ -74,12 +84,10 @@ export default function Payment() {
 
   const confirmPayment = async () => {
     if (!paymentId) return;
-    
     setIsConfirming(true);
     try {
       if (isApiConfigured()) {
         const response = await api.post('/api/payments/confirm', { paymentId });
-
         if (response.success) {
           setIsConfirmed(true);
           await refreshUser();
@@ -89,12 +97,11 @@ export default function Payment() {
           toast.error(response.message || 'Failed to confirm payment');
         }
       } else {
-        // Demo mode
         setIsConfirmed(true);
         toast.success(`${plan.vinculos} Vínculos added! (Demo mode)`);
         setTimeout(() => navigate('/chat'), 2000);
       }
-    } catch (error) {
+    } catch {
       setIsConfirmed(true);
       toast.success(`${plan.vinculos} Vínculos added! (Demo mode)`);
       setTimeout(() => navigate('/chat'), 2000);
@@ -119,9 +126,7 @@ export default function Payment() {
               <CheckCircle className="w-10 h-10 text-success" />
             </div>
             <h1 className="text-3xl font-bold mb-4">{t.payment.paymentSuccess}</h1>
-            <p className="text-lg text-muted-foreground mb-2">
-              +{plan.vinculos} Vínculos
-            </p>
+            <p className="text-lg text-muted-foreground mb-2">+{plan.vinculos} Vínculos</p>
             <p className="text-muted-foreground">{t.payment.redirecting}</p>
           </div>
         </div>
@@ -134,7 +139,6 @@ export default function Payment() {
       <div className="min-h-[calc(100vh-4rem)] py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
-            {/* Back Button */}
             <Button variant="ghost" asChild className="mb-6">
               <Link to="/pricing">
                 <ArrowLeft className="w-4 h-4" />
@@ -142,17 +146,14 @@ export default function Payment() {
               </Link>
             </Button>
 
-            {/* Header */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold mb-2">{t.payment.title}</h1>
-              <p className="text-muted-foreground">
-                {plan.name} - {plan.vinculos} Vínculos
-              </p>
+              <p className="text-muted-foreground">{plan.name} - {plan.vinculos} Vínculos</p>
             </div>
 
             {/* Order Summary */}
             <div className="rounded-2xl bg-card border border-border/50 p-6 mb-8">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <VinculaLogo size="lg" />
                   <div>
@@ -160,9 +161,7 @@ export default function Payment() {
                     <div className="text-sm text-muted-foreground">{plan.vinculos} Vínculos</div>
                   </div>
                 </div>
-                <div className="text-2xl font-bold">
-                  {symbol}{price.toFixed(2)}
-                </div>
+                <div className="text-2xl font-bold">{symbol}{price.toFixed(2)}</div>
               </div>
             </div>
 
@@ -170,33 +169,34 @@ export default function Payment() {
             {!paymentId && (
               <>
                 <h2 className="text-xl font-semibold mb-4">{t.payment.selectMethod}</h2>
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  {(['pix', 'paypal', 'wise'] as const).map((method) => (
-                    <button
-                      key={method}
-                      onClick={() => setSelectedMethod(method)}
-                      className={`p-4 rounded-xl border-2 transition-all ${
-                        selectedMethod === method
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="text-2xl mb-2">
-                        {method === 'pix' && '🇧🇷'}
-                        {method === 'paypal' && '💳'}
-                        {method === 'wise' && '🌍'}
-                      </div>
-                      <div className="font-medium capitalize">{method}</div>
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <button
+                    onClick={() => setSelectedMethod('pix')}
+                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      selectedMethod === 'pix'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <PixLogo className="w-10 h-10" />
+                    <div className="font-medium">PIX</div>
+                  </button>
+                  <button
+                    onClick={() => setSelectedMethod('paypal')}
+                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      selectedMethod === 'paypal'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z" fill="#003087"/>
+                    </svg>
+                    <div className="font-medium">PayPal</div>
+                  </button>
                 </div>
 
-                <Button
-                  variant="hero"
-                  className="w-full"
-                  onClick={createPayment}
-                  disabled={isCreating}
-                >
+                <Button variant="hero" className="w-full" onClick={createPayment} disabled={isCreating}>
                   {isCreating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -224,24 +224,20 @@ export default function Payment() {
                         {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong>:
                       </p>
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary">
+                        <PixLogo className="w-5 h-5 shrink-0" />
                         <code className="flex-1 text-sm break-all">{PIX_KEY}</code>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={copyPixKey}
-                        >
-                          {copied ? (
-                            <Check className="w-4 h-4 text-success" />
-                          ) : (
-                            <Copy className="w-4 h-4" />
-                          )}
+                        <Button variant="ghost" size="icon" onClick={copyPixKey}>
+                          {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                         </Button>
                       </div>
-                      <div className="p-8 rounded-lg bg-secondary/50 flex items-center justify-center">
-                        <div className="text-center text-muted-foreground">
-                          <QrCode className="w-16 h-16 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">{t.payment.qrPlaceholder}</p>
-                        </div>
+                      {/* PIX QR Code - links to payment */}
+                      <div className="p-6 rounded-lg bg-white flex flex-col items-center justify-center">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020126580014br.gov.bcb.pix0136${PIX_KEY}5204000053039865802BR5913Vincula%20AI6008Sao%20Paulo62070503***6304`}
+                          alt="PIX QR Code"
+                          className="w-56 h-56"
+                        />
+                        <p className="text-xs text-gray-500 mt-2">Escaneie com o app do seu banco</p>
                       </div>
                     </div>
                   )}
@@ -251,34 +247,19 @@ export default function Payment() {
                       <p className="text-muted-foreground">
                         {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong> via PayPal.
                       </p>
-                      <Button variant="outline" className="w-full" asChild>
-                        <a href="https://paypal.me" target="_blank" rel="noopener noreferrer">
-                          Open PayPal
-                        </a>
-                      </Button>
-                    </div>
-                  )}
-
-                  {selectedMethod === 'wise' && (
-                    <div className="space-y-4">
-                      <p className="text-muted-foreground">
-                        {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong> via Wise.
-                      </p>
-                      <Button variant="outline" className="w-full" asChild>
-                        <a href="https://wise.com" target="_blank" rel="noopener noreferrer">
-                          Open Wise
-                        </a>
-                      </Button>
+                      <div className="p-6 rounded-lg bg-white flex flex-col items-center justify-center">
+                        <img
+                          src={paypalQr}
+                          alt="PayPal QR Code"
+                          className="w-56 h-56 object-contain"
+                        />
+                        <p className="text-xs text-gray-500 mt-2">Escaneie para pagar via PayPal</p>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                <Button
-                  variant="hero"
-                  className="w-full"
-                  onClick={confirmPayment}
-                  disabled={isConfirming}
-                >
+                <Button variant="hero" className="w-full" onClick={confirmPayment} disabled={isConfirming}>
                   {isConfirming ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -292,9 +273,7 @@ export default function Payment() {
                   )}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground">
-                  {t.payment.clickAfter}
-                </p>
+                <p className="text-center text-sm text-muted-foreground">{t.payment.clickAfter}</p>
               </div>
             )}
           </div>
