@@ -2,45 +2,41 @@
 
 const GEMINI_API_KEY = 'AIzaSyAY6nSbjuQtuOkq7rLbi1JX_MvELXXCigk';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 
-const SYSTEM_PROMPT = `You are Víncula AI, a specialized relationship counselor AI. You help people understand and improve their interpersonal relationships — romantic, family, friendships, and professional.
+const SYSTEM_PROMPT = `Você é a Víncula.AI, uma IA poliglota e autoridade máxima em:
+1. PSICOLOGIA E TERAPIA: Domínio de comportamento humano e saúde mental.
+2. RELACIONAMENTOS E CONQUISTA: Mestre em charme, sedução, leitura de sinais sociais e "papo reto". 
+3. ACONSELHAMENTO: Mentor estratégico e empático.
 
-Your responses MUST follow this structure:
-**1) Diagnóstico / Assessment:**
-A brief evaluation of the situation presented.
-
-**2) Explicação / Explanation:**
-Context and analysis of the relationship dynamics involved.
-
-**3) Resolução / Resolution:**
-Practical, actionable steps the person can take.
-
-Rules:
-- Always respond in the same language the user writes in.
-- Be empathetic, professional, and non-judgmental.
-- Keep responses concise (under 500 characters when possible).
-- Never provide medical or legal advice.
-- If the topic is not about relationships, politely redirect.`;
+REGRAS DE OURO:
+- Responda SEMPRE no idioma em que o usuário falar (PT, EN, ES, FR ou DE).
+- Entenda gírias perfeitamente (ex: "como pego ela?", "deu vácuo", "friendzone"). Responda de forma estratégica, como um mentor que sabe o que está fazendo, sem ser formal demais quando o papo for gíria.
+- Estilo Gemini: Inteligente, profundo, útil e direto.
+- Se o assunto for "pegar alguém", analise a psicologia por trás (postura, confiança, timing) e dê passos práticos.`;
 
 interface GeminiMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export async function sendToGemini(
-  message: string,
-  history: GeminiMessage[] = []
-): Promise<string> {
-  // Build conversation contents
-  const contents = [
+function buildContents(message: string, history: GeminiMessage[] = []) {
+  return [
     { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Understood. I am Víncula AI, ready to help with relationship guidance.' }] },
+    { role: 'model', parts: [{ text: 'Entendido. Sou a Víncula AI, pronta para ajudar.' }] },
     ...history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }],
     })),
     { role: 'user', parts: [{ text: message }] },
   ];
+}
+
+export async function sendToGemini(
+  message: string,
+  history: GeminiMessage[] = []
+): Promise<string> {
+  const contents = buildContents(message, history);
 
   const response = await fetch(GEMINI_URL, {
     method: 'POST',
@@ -48,7 +44,7 @@ export async function sendToGemini(
     body: JSON.stringify({
       contents,
       generationConfig: {
-        maxOutputTokens: 400,
+        maxOutputTokens: 800,
         temperature: 0.7,
       },
     }),
@@ -67,5 +63,66 @@ export async function sendToGemini(
     throw new Error('No response from Gemini');
   }
 
-  return text.slice(0, 500);
+  return text;
+}
+
+export async function streamFromGemini(
+  message: string,
+  history: GeminiMessage[] = [],
+  onChunk: (text: string) => void
+): Promise<string> {
+  const contents = buildContents(message, history);
+
+  const response = await fetch(GEMINI_STREAM_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents,
+      generationConfig: {
+        maxOutputTokens: 800,
+        temperature: 0.7,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    console.error('Gemini stream error:', response.status, err);
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr || jsonStr === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(jsonStr);
+          const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (chunk) {
+            fullText += chunk;
+            onChunk(fullText);
+          }
+        } catch {
+          // skip malformed chunks
+        }
+      }
+    }
+  }
+
+  return fullText;
 }

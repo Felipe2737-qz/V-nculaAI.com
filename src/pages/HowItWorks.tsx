@@ -76,48 +76,7 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* AI Response Structure */}
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              {t.howItWorks.structuredTitle}
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <span className="text-2xl font-bold text-primary">1</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{t.howItWorks.assessmentTitle}</h3>
-                <p className="text-muted-foreground">
-                  {t.howItWorks.assessmentText}
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <span className="text-2xl font-bold text-primary">2</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{t.howItWorks.explanationTitle}</h3>
-                <p className="text-muted-foreground">
-                  {t.howItWorks.explanationText}
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl bg-card border border-border/50">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <span className="text-2xl font-bold text-primary">3</span>
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{t.howItWorks.resolutionTitle}</h3>
-                <p className="text-muted-foreground">
-                  {t.howItWorks.resolutionText}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Removed 3-topic section */}
 
       {/* CTA */}
       <section className="py-24">

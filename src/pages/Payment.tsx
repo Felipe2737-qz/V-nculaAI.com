@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, CheckCircle, Loader2, QrCode } from 'lucide-react';
+import { ArrowLeft, Copy, Check, CheckCircle, Loader2, QrCode, Upload, FileImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
@@ -22,7 +22,6 @@ const PIX_KEY = '85982309370';
 
 type PaymentMethod = 'pix' | 'paypal';
 
-// PIX logo SVG component
 function PixLogo({ className = '' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -42,19 +41,21 @@ export default function Payment() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { t, currency } = useApp();
+  const { t, currency, language } = useApp();
   const { user, isAuthenticated, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const isPt = language === 'pt';
 
   const plan = DEFAULT_PLANS.find(p => p.id === planId) || DEFAULT_PLANS[0];
   const price = plan.prices[currency] || plan.prices.USD;
   const symbol = CURRENCY_SYMBOLS[currency] || '$';
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
+    if (!isAuthenticated) navigate('/login');
   }, [isAuthenticated, navigate]);
 
   const createPayment = async () => {
@@ -62,9 +63,7 @@ export default function Payment() {
     try {
       if (isApiConfigured()) {
         const response = await api.post<{ paymentId: string }>('/api/payments/create', {
-          planId: plan.id,
-          method: selectedMethod,
-          currency,
+          planId: plan.id, method: selectedMethod, currency,
           idempotencyKey: `${user?.id}-${plan.id}-${Date.now()}`,
         });
         if (response.success && response.data?.paymentId) {
@@ -82,8 +81,39 @@ export default function Payment() {
     }
   };
 
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast.error(isPt ? 'Formato inválido. Use imagem ou PDF.' : 'Invalid format. Use image or PDF.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(isPt ? 'Arquivo muito grande (máx 5MB)' : 'File too large (max 5MB)');
+      return;
+    }
+
+    setReceiptFile(file);
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setReceiptPreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview(null);
+    }
+    toast.success(isPt ? 'Comprovante anexado!' : 'Receipt attached!');
+  };
+
   const confirmPayment = async () => {
     if (!paymentId) return;
+
+    if (!receiptFile) {
+      toast.error(isPt ? 'Anexe o comprovante de pagamento antes de confirmar.' : 'Please attach the payment receipt before confirming.');
+      return;
+    }
+
     setIsConfirming(true);
     try {
       if (isApiConfigured()) {
@@ -140,10 +170,7 @@ export default function Payment() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
             <Button variant="ghost" asChild className="mb-6">
-              <Link to="/pricing">
-                <ArrowLeft className="w-4 h-4" />
-                {t.common.back}
-              </Link>
+              <Link to="/pricing"><ArrowLeft className="w-4 h-4" />{t.common.back}</Link>
             </Button>
 
             <div className="text-center mb-8">
@@ -173,9 +200,7 @@ export default function Payment() {
                   <button
                     onClick={() => setSelectedMethod('pix')}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      selectedMethod === 'pix'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                      selectedMethod === 'pix' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <PixLogo className="w-10 h-10" />
@@ -184,9 +209,7 @@ export default function Payment() {
                   <button
                     onClick={() => setSelectedMethod('paypal')}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      selectedMethod === 'paypal'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                      selectedMethod === 'paypal' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
@@ -198,10 +221,7 @@ export default function Payment() {
 
                 <Button variant="hero" className="w-full" onClick={createPayment} disabled={isCreating}>
                   {isCreating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.common.loading}
-                    </>
+                    <><Loader2 className="w-4 h-4 animate-spin" />{t.common.loading}</>
                   ) : (
                     `${t.payment.continueWith} ${selectedMethod.toUpperCase()}`
                   )}
@@ -230,14 +250,13 @@ export default function Payment() {
                           {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                         </Button>
                       </div>
-                      {/* PIX QR Code - links to payment */}
                       <div className="p-6 rounded-lg bg-white flex flex-col items-center justify-center">
                         <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020126580014br.gov.bcb.pix0136${PIX_KEY}5204000053039865802BR5913Vincula%20AI6008Sao%20Paulo62070503***6304`}
                           alt="PIX QR Code"
                           className="w-56 h-56"
                         />
-                        <p className="text-xs text-gray-500 mt-2">Escaneie com o app do seu banco</p>
+                        <p className="text-xs text-gray-500 mt-2">{isPt ? 'Escaneie com o app do seu banco' : 'Scan with your bank app'}</p>
                       </div>
                     </div>
                   )}
@@ -248,28 +267,65 @@ export default function Payment() {
                         {t.payment.sendExactly} <strong>{symbol}{price.toFixed(2)}</strong> via PayPal.
                       </p>
                       <div className="p-6 rounded-lg bg-white flex flex-col items-center justify-center">
-                        <img
-                          src={paypalQr}
-                          alt="PayPal QR Code"
-                          className="w-56 h-56 object-contain"
-                        />
-                        <p className="text-xs text-gray-500 mt-2">Escaneie para pagar via PayPal</p>
+                        <img src={paypalQr} alt="PayPal QR Code" className="w-56 h-56 object-contain" />
+                        <p className="text-xs text-gray-500 mt-2">{isPt ? 'Escaneie para pagar via PayPal' : 'Scan to pay via PayPal'}</p>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <Button variant="hero" className="w-full" onClick={confirmPayment} disabled={isConfirming}>
-                  {isConfirming ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {t.common.loading}
-                    </>
+                {/* Receipt Upload */}
+                <div className="rounded-2xl bg-card border border-border/50 p-6">
+                  <h3 className="font-semibold mb-4 flex items-center gap-2">
+                    <FileImage className="w-5 h-5 text-primary" />
+                    {isPt ? 'Comprovante de Pagamento' : 'Payment Receipt'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {isPt
+                      ? 'Anexe o comprovante do PIX ou da transferência PayPal para verificação.'
+                      : 'Attach the PIX receipt or PayPal transfer proof for verification.'}
+                  </p>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                  />
+
+                  {!receiptFile ? (
+                    <Button
+                      variant="outline"
+                      className="w-full h-24 border-dashed border-2 flex flex-col gap-2"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
+                        {isPt ? 'Clique para anexar comprovante (imagem ou PDF, máx 5MB)' : 'Click to attach receipt (image or PDF, max 5MB)'}
+                      </span>
+                    </Button>
                   ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      {t.payment.confirmPayment}
-                    </>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10 border border-success/20">
+                        <Check className="w-5 h-5 text-success shrink-0" />
+                        <span className="text-sm font-medium truncate">{receiptFile.name}</span>
+                        <Button variant="ghost" size="sm" onClick={() => { setReceiptFile(null); setReceiptPreview(null); }}>
+                          {isPt ? 'Trocar' : 'Change'}
+                        </Button>
+                      </div>
+                      {receiptPreview && (
+                        <img src={receiptPreview} alt="Receipt" className="max-h-48 rounded-lg mx-auto border border-border/50" />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <Button variant="hero" className="w-full" onClick={confirmPayment} disabled={isConfirming || !receiptFile}>
+                  {isConfirming ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" />{t.common.loading}</>
+                  ) : (
+                    <><Check className="w-4 h-4" />{t.payment.confirmPayment}</>
                   )}
                 </Button>
 

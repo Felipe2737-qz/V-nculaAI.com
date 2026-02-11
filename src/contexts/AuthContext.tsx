@@ -19,7 +19,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FREE_MESSAGES_PER_DAY = 50;
+const FREE_MESSAGES_PER_DAY = 25;
 const FREE_MESSAGES_KEY = 'vincula_free_messages';
 
 interface FreeMessageData {

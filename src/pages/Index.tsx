@@ -123,34 +123,10 @@ export default function Index() {
                 {t.howSection.title} <span className="gradient-vincula-text">{t.howSection.subtitle}</span>
               </h2>
 
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-primary font-bold">1</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">{t.howSection.assessment}</h4>
-                    <p className="text-sm text-muted-foreground">{t.howSection.assessmentDesc}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-primary font-bold">2</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">{t.howSection.explanation}</h4>
-                    <p className="text-sm text-muted-foreground">{t.howSection.explanationDesc}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="text-primary font-bold">3</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-1">{t.howSection.resolution}</h4>
-                    <p className="text-sm text-muted-foreground">{t.howSection.resolutionDesc}</p>
-                  </div>
-                </div>
+              <div className="space-y-4 text-lg text-muted-foreground">
+                <p>{t.howSection.assessmentDesc}</p>
+                <p>{t.howSection.explanationDesc}</p>
+                <p>{t.howSection.resolutionDesc}</p>
               </div>
 
               <Button variant="hero" className="mt-8" asChild>
