@@ -60,9 +60,7 @@ export default function Chat() {
   const { user, isAuthenticated, updateVinculos, useFreeMessage, getFreeMessagesLeft } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!isAuthenticated) navigate('/login');
-  }, [isAuthenticated, navigate]);
+  // Allow browsing without account - no redirect
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

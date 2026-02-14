@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, User, Globe, Trash2 } from 'lucide-react';
+import { ArrowLeft, User, Globe, Trash2, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,6 +51,25 @@ export default function AccountSettings() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [profileImage, setProfileImage] = useState<string | null>(() => localStorage.getItem('vincula_profile_image'));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image too large (max 2MB)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setProfileImage(dataUrl);
+      localStorage.setItem('vincula_profile_image', dataUrl);
+      toast.success('Profile image updated!');
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -120,6 +139,24 @@ export default function AccountSettings() {
               </h2>
 
               <div className="space-y-6">
+                {/* Profile Image */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <div className="w-24 h-24 rounded-full bg-secondary border-2 border-border overflow-hidden flex items-center justify-center">
+                      {profileImage ? (
+                        <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="w-6 h-6 text-background" />
+                    </div>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleProfileImageChange} />
+                  <p className="text-xs text-muted-foreground">Click to change photo</p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="name">{t.auth.name}</Label>
                   <Input
