@@ -1,128 +1,118 @@
-// Google Gemini AI integration for Víncula AI chat
+// Streaming chat via Lovable AI Gateway edge function
+// No API keys in the frontend - everything goes through the backend
 
-const GEMINI_API_KEY = 'AIzaSyBTqf8mwptwGKFFs50XqrPAnv_LYrs1ygA';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+const HELP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/help`;
 
-const SYSTEM_PROMPT = `Você é a Víncula.AI, uma IA poliglota e autoridade máxima em:
-1. PSICOLOGIA E TERAPIA: Domínio de comportamento humano e saúde mental.
-2. RELACIONAMENTOS E CONQUISTA: Mestre em charme, sedução, leitura de sinais sociais e "papo reto". 
-3. ACONSELHAMENTO: Mentor estratégico e empático.
-
-REGRAS DE OURO:
-- Responda SEMPRE no idioma em que o usuário falar (PT, EN, ES, FR ou DE).
-- Entenda gírias perfeitamente (ex: "como pego ela?", "deu vácuo", "friendzone"). Responda de forma estratégica, como um mentor que sabe o que está fazendo, sem ser formal demais quando o papo for gíria.
-- Estilo Gemini: Inteligente, profundo, útil e direto.
-- Se o assunto for "pegar alguém", analise a psicologia por trás (postura, confiança, timing) e dê passos práticos.`;
-
-interface GeminiMessage {
+export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-function buildContents(message: string, history: GeminiMessage[] = []) {
-  return [
-    { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: 'Entendido. Sou a Víncula AI, pronta para ajudar.' }] },
-    ...history.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }],
-    })),
-    { role: 'user', parts: [{ text: message }] },
-  ];
-}
-
-export async function sendToGemini(
-  message: string,
-  history: GeminiMessage[] = []
-): Promise<string> {
-  const contents = buildContents(message, history);
-
-  const response = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents,
-      generationConfig: {
-        maxOutputTokens: 800,
-        temperature: 0.7,
-      },
-    }),
+export async function streamChat({
+  messages,
+  onDelta,
+  onDone,
+}: {
+  messages: ChatMessage[];
+  onDelta: (deltaText: string) => void;
+  onDone: () => void;
+}): Promise<string> {
+  const resp = await fetch(CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages }),
   });
 
-  if (!response.ok) {
-    const err = await response.text();
-    console.error('Gemini API error:', response.status, err);
-    throw new Error(`Gemini API error: ${response.status}`);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(err.error || `Error ${resp.status}`);
   }
 
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!resp.body) throw new Error("No response body");
 
-  if (!text) {
-    throw new Error('No response from Gemini');
-  }
-
-  return text;
-}
-
-export async function streamFromGemini(
-  message: string,
-  history: GeminiMessage[] = [],
-  onChunk: (text: string) => void
-): Promise<string> {
-  const contents = buildContents(message, history);
-
-  const response = await fetch(GEMINI_STREAM_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents,
-      generationConfig: {
-        maxOutputTokens: 800,
-        temperature: 0.7,
-      },
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    console.error('Gemini stream error:', response.status, err);
-    throw new Error(`Gemini API error: ${response.status}`);
-  }
-
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error('No response body');
-
+  const reader = resp.body.getReader();
   const decoder = new TextDecoder();
-  let fullText = '';
-  let buffer = '';
+  let textBuffer = "";
+  let fullText = "";
+  let streamDone = false;
 
-  while (true) {
+  while (!streamDone) {
     const { done, value } = await reader.read();
     if (done) break;
+    textBuffer += decoder.decode(value, { stream: true });
 
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+    let newlineIndex: number;
+    while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+      let line = textBuffer.slice(0, newlineIndex);
+      textBuffer = textBuffer.slice(newlineIndex + 1);
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const jsonStr = line.slice(6).trim();
-        if (!jsonStr || jsonStr === '[DONE]') continue;
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const chunk = parsed.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (chunk) {
-            fullText += chunk;
-            onChunk(fullText);
-          }
-        } catch {
-          // skip malformed chunks
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.startsWith(":") || line.trim() === "") continue;
+      if (!line.startsWith("data: ")) continue;
+
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") {
+        streamDone = true;
+        break;
+      }
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) {
+          fullText += content;
+          onDelta(content);
         }
+      } catch {
+        textBuffer = line + "\n" + textBuffer;
+        break;
       }
     }
   }
 
+  // Final flush
+  if (textBuffer.trim()) {
+    for (let raw of textBuffer.split("\n")) {
+      if (!raw) continue;
+      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+      if (raw.startsWith(":") || raw.trim() === "") continue;
+      if (!raw.startsWith("data: ")) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) {
+          fullText += content;
+          onDelta(content);
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  onDone();
   return fullText;
+}
+
+export async function sendHelpMessage(messages: ChatMessage[]): Promise<string> {
+  const resp = await fetch(HELP_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(err.error || `Error ${resp.status}`);
+  }
+
+  const data = await resp.json();
+  return data.text || "No response";
 }

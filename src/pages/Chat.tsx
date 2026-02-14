@@ -6,8 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { VinculaLogo } from '@/components/shared/VinculaLogo';
-import { isApiConfigured } from '@/lib/api';
-import { streamFromGemini } from '@/lib/gemini';
+import { streamChat } from '@/lib/gemini';
 import { toast } from 'sonner';
 
 interface Message {
@@ -182,8 +181,14 @@ export default function Chat() {
         content: m.content,
       }));
 
-      const fullText = await streamFromGemini(userMessage.content, history, (text) => {
-        setStreamingText(text);
+      let accumulated = '';
+      const fullText = await streamChat({
+        messages: [...history, { role: 'user', content: userMessage.content }],
+        onDelta: (chunk) => {
+          accumulated += chunk;
+          setStreamingText(accumulated);
+        },
+        onDone: () => {},
       });
 
       const assistantMessage: Message = {

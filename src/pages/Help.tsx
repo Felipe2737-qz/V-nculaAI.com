@@ -5,21 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
-import { sendToGemini } from '@/lib/gemini';
+import { sendHelpMessage } from '@/lib/gemini';
 
-const HELP_SYSTEM_PROMPT = `Você é o assistente de suporte da Víncula.AI. Responda APENAS sobre:
-- Como usar a plataforma Víncula AI
-- Planos e pagamentos (PIX e PayPal)
-- Problemas técnicos do site
-- Como funciona o sistema de Vínculos (créditos)
-- Política de privacidade e termos de uso
-- Conta e configurações
-
-Se perguntarem algo fora do escopo de ajuda/suporte, diga educadamente que este chat é apenas para suporte e que para conversas pessoais devem usar o chat principal.
-
-Email de suporte: suporte.vinculaai@gmail.com
-
-Responda no idioma do usuário. Seja breve e útil.`;
 
 interface HelpMessage {
   id: string;
@@ -49,9 +36,7 @@ export default function Help() {
 
     try {
       const history = messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
-      // Prepend help system prompt to user message
-      const helpMessage = `[CONTEXT: ${HELP_SYSTEM_PROMPT}]\n\nUser question: ${text}`;
-      const response = await sendToGemini(helpMessage, history);
+      const response = await sendHelpMessage([...history, { role: 'user', content: text }]);
       setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: response }]);
     } catch {
       setMessages(prev => [...prev, { id: `e-${Date.now()}`, role: 'assistant', content: 'Desculpe, ocorreu um erro. Tente novamente ou envie email para suporte.vinculaai@gmail.com' }]);
