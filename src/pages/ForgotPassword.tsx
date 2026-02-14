@@ -73,8 +73,11 @@ export default function ForgotPassword() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold text-center mb-2">{t.auth.resetPassword}</h1>
-                <p className="text-muted-foreground text-center mb-8">
+                <p className="text-muted-foreground text-center mb-4">
                   Enter your email and we'll send you a reset link.
+                </p>
+                <p className="text-sm text-muted-foreground text-center mb-8">
+                  Ou entre em contato: <a href="mailto:suporte.vinculaai@gmail.com" className="text-primary hover:underline font-medium">suporte.vinculaai@gmail.com</a>
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

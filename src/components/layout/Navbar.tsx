@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, User, LogOut, Settings } from 'lucide-react';
+import { Menu, X, User, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,7 +24,8 @@ export function Navbar() {
   { href: '/', label: t.nav.home },
   { href: '/how-it-works', label: t.nav.howItWorks },
   { href: '/about', label: t.nav.about },
-  { href: '/pricing', label: t.nav.pricing }];
+  { href: '/pricing', label: t.nav.pricing },
+  { href: '/help', label: 'Ajuda' }];
 
 
   const handleLogout = async () => {
@@ -75,8 +76,11 @@ export function Navbar() {
                 {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <User className="w-5 h-5" />
+                    <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
+                      {(() => {
+                        const img = localStorage.getItem('vincula_profile_image');
+                        return img ? <img src={img} alt="Profile" className="w-8 h-8 rounded-full object-cover" /> : <User className="w-5 h-5" />;
+                      })()}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">

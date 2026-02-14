@@ -1,6 +1,6 @@
 // Google Gemini AI integration for Víncula AI chat
 
-const GEMINI_API_KEY = 'AIzaSyAY6nSbjuQtuOkq7rLbi1JX_MvELXXCigk';
+const GEMINI_API_KEY = 'AIzaSyBTqf8mwptwGKFFs50XqrPAnv_LYrs1ygA';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`;
 

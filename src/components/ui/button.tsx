@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        default: "bg-primary text-primary-foreground hover:bg-foreground hover:text-background hover:scale-[1.05] shadow-sm transition-all duration-300",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:scale-[1.05] shadow-sm transition-all duration-300",
+        outline: "border border-input bg-background hover:bg-foreground hover:text-background hover:scale-[1.05] transition-all duration-300",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-foreground hover:text-background hover:scale-[1.05] transition-all duration-300",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Víncula custom variants
-        hero: "gradient-vincula text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] glow-vincula-sm",
-        "hero-outline": "border-2 border-primary bg-transparent text-primary hover:bg-primary/10 font-semibold",
-        premium: "gradient-vincula text-primary-foreground font-medium shadow-md hover:shadow-lg hover:scale-[1.01]",
+        hero: "gradient-vincula text-primary-foreground font-semibold shadow-lg hover:shadow-xl hover:scale-[1.05] hover:bg-foreground hover:bg-none hover:text-background glow-vincula-sm transition-all duration-300",
+        "hero-outline": "border-2 border-primary bg-transparent text-primary hover:bg-foreground hover:text-background hover:border-foreground hover:scale-[1.05] font-semibold transition-all duration-300",
+        premium: "gradient-vincula text-primary-foreground font-medium shadow-md hover:shadow-lg hover:scale-[1.05] hover:bg-foreground hover:bg-none hover:text-background transition-all duration-300",
         glass: "glass text-foreground hover:bg-secondary/50 backdrop-blur-md",
       },
       size: {
