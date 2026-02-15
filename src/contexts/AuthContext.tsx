@@ -57,16 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchMe = async () => {
     if (!isApiConfigured()) {
-      // Demo mode - create a demo user
-      setUser({
-        id: 'demo-user',
-        name: 'Demo User',
-        email: 'demo@vincula.ai',
-        vinculos: 100,
-        provider: 'email',
-        preferences: { language: 'en', currency: 'USD' },
-        createdAt: new Date().toISOString(),
-      });
+      // No backend configured - start without account
+      setUser(null);
       setIsOffline(false);
       setIsLoading(false);
       return;
@@ -95,17 +87,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     if (!isApiConfigured()) {
-      // Demo mode login
+      // No backend - simulate login with local user
       setUser({
-        id: 'demo-user',
-        name: 'Demo User',
+        id: `user-${Date.now()}`,
+        name: email.split('@')[0],
         email,
-        vinculos: 100,
+        vinculos: 50,
         provider: 'email',
         preferences: { language: 'en', currency: 'USD' },
         createdAt: new Date().toISOString(),
       });
-      toast.success('Logged in (Demo Mode)');
+      toast.success('Login realizado!');
       return true;
     }
 
@@ -128,9 +120,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
     if (!isApiConfigured()) {
-      // Demo mode signup
+      // No backend - simulate signup with local user
       setUser({
-        id: 'demo-user',
+        id: `user-${Date.now()}`,
         name,
         email,
         vinculos: 50,
@@ -138,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         preferences: { language: 'en', currency: 'USD' },
         createdAt: new Date().toISOString(),
       });
-      toast.success('Account created (Demo Mode)');
+      toast.success('Conta criada com sucesso!');
       return true;
     }
 
