@@ -36,6 +36,18 @@ const DEFAULT_PLANS: Plan[] = [
     vinculos: 1000,
     prices: { USD: 15, BRL: 75, EUR: 14.99, GBP: 13.99 },
   },
+  {
+    id: 'gala-pro',
+    name: 'Galã PRO',
+    vinculos: 2500,
+    prices: { USD: 29.99, BRL: 180, EUR: 24.99, GBP: 22.49 },
+  },
+  {
+    id: 'pegador-max',
+    name: 'Pegador MAX',
+    vinculos: 3500,
+    prices: { USD: 60, BRL: 300, EUR: 50, GBP: 45 },
+  },
 ];
 
 export default function Pricing() {
@@ -103,7 +115,7 @@ export default function Pricing() {
       {/* Plans */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {plans.map((plan) => (
               <div
                 key={plan.id}

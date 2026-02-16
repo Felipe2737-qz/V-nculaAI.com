@@ -1,17 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, Loader2, Mail, MessageCircle, ArrowLeft } from 'lucide-react';
+import { Send, Loader2, Mail, MessageCircle, ArrowLeft, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { useApp } from '@/contexts/AppContext';
 import { sendHelpMessage } from '@/lib/gemini';
-
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface HelpMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface ErrorReport {
+  id: string;
+  message: string;
+  created_at: string;
 }
 
 export default function Help() {
@@ -20,6 +28,13 @@ export default function Help() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t } = useApp();
+
+  // Error report state
+  const [errorText, setErrorText] = useState('');
+  const [submittingError, setSubmittingError] = useState(false);
+  const [reports, setReports] = useState<ErrorReport[]>([]);
+  const [showReports, setShowReports] = useState(false);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,6 +60,52 @@ export default function Help() {
     }
   };
 
+  const submitErrorReport = async () => {
+    const msg = errorText.trim();
+    if (!msg || submittingError) return;
+    setSubmittingError(true);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/error-reports`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ message: msg }),
+      });
+      if (!resp.ok) throw new Error('Failed');
+      toast.success('Erro relatado com sucesso!');
+      setErrorText('');
+      if (showReports) fetchReports();
+    } catch {
+      toast.error('Falha ao relatar erro.');
+    } finally {
+      setSubmittingError(false);
+    }
+  };
+
+  const fetchReports = async () => {
+    setLoadingReports(true);
+    try {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/error-reports`, {
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      });
+      const data = await resp.json();
+      setReports(data.reports || []);
+    } catch {
+      setReports([]);
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const toggleReports = () => {
+    if (!showReports) fetchReports();
+    setShowReports(prev => !prev);
+  };
+
   return (
     <PageLayout showFooter={false}>
       <div className="min-h-[calc(100vh-4rem)] flex flex-col">
@@ -58,9 +119,58 @@ export default function Help() {
               <MessageCircle className="w-6 h-6 text-primary" />
               Central de Ajuda
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Pergunte sobre a plataforma ou entre em contato: <a href="mailto:suporte.vinculaai@gmail.com" className="text-primary hover:underline">suporte.vinculaai@gmail.com</a>
-            </p>
+            <div className="flex flex-wrap items-center gap-3 mt-2">
+              <p className="text-muted-foreground">
+                <a href="mailto:suporte.vinculaai@gmail.com" className="text-primary hover:underline inline-flex items-center gap-1">
+                  <Mail className="w-4 h-4" /> suporte.vinculaai@gmail.com
+                </a>
+              </p>
+
+              {/* Report Error inline */}
+              <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-md">
+                <Input
+                  value={errorText}
+                  onChange={e => setErrorText(e.target.value)}
+                  placeholder="Relatar um erro..."
+                  className="h-9 text-sm"
+                  maxLength={500}
+                  onKeyDown={e => { if (e.key === 'Enter') submitErrorReport(); }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={submitErrorReport}
+                  disabled={!errorText.trim() || submittingError}
+                  className="shrink-0 rounded-xl border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <AlertTriangle className="w-4 h-4 mr-1" />
+                  {submittingError ? '...' : 'Relatar'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Toggle reports */}
+            <Button variant="ghost" size="sm" onClick={toggleReports} className="mt-2 text-xs text-muted-foreground">
+              {showReports ? <ChevronUp className="w-3 h-3 mr-1" /> : <ChevronDown className="w-3 h-3 mr-1" />}
+              {showReports ? 'Ocultar erros reportados' : 'Ver erros reportados'}
+            </Button>
+
+            {showReports && (
+              <div className="mt-3 max-h-48 overflow-y-auto space-y-2 bg-secondary/30 rounded-lg p-3">
+                {loadingReports ? (
+                  <p className="text-xs text-muted-foreground">Carregando...</p>
+                ) : reports.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum erro reportado ainda.</p>
+                ) : (
+                  reports.map(r => (
+                    <div key={r.id} className="text-xs p-2 bg-card rounded-lg border border-border/50">
+                      <p className="text-foreground">{r.message}</p>
+                      <p className="text-muted-foreground mt-1">{new Date(r.created_at).toLocaleString()}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
 
